@@ -32,3 +32,7 @@ interface ITodoFooterProps {
 interface ITodoFooterItemProps {
 	selected?: boolean
 }
+
+interface ILoginModal {
+	active: boolean
+}

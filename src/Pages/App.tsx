@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 import TodoItem from 'Components/todo-item';
 import TodoFooter from 'Components/todo-footer';
+import LoginModal from 'Components/modal'
 
 const TodoApp = styled.div`
 	background: #fff;
@@ -245,6 +246,7 @@ const App: React.FC = () => {
 			</form>
 			{main}
 			{footer}
+			<LoginModal active={true} />
 		</TodoApp>
 	);
 };
