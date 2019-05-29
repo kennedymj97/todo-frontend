@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import axios from 'axios';
 
 import TodoItem from 'Components/todo-item';
 import TodoFooter from 'Components/todo-footer';
-import LoginModal from 'Components/modal'
+import LoginModal from 'Components/modal';
+import Button from 'Components/UI/button';
 
 const TodoApp = styled.div`
 	background: #fff;
@@ -108,18 +110,55 @@ const TodoList = styled.ul`
 	list-style: none;
 `;
 
+const Nav = styled.nav`
+	display: flex;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	padding: 10px;
+	box-sizing: border-box;
+`;
+
+const Footer = styled.footer`
+	margin: 65px auto 0;
+	color: #bfbfbf;
+	font-size: 10px;
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+	text-align: center;
+
+	p {
+		line-height: 1;
+	}
+
+	a {
+		color: inherit;
+		text-decoration: none;
+		font-weight: 400;
+	}
+
+	a:hover {
+		text-decoration: underline;
+	}
+`;
+
 const App: React.FC = () => {
 	const [ task, setTask ] = useState<string>('');
-	const [ todos, setTodos ] = useState([
-		{ id: 1, title: 'get some eggs', completed: false },
-		{ id: 2, title: 'get some bananas', completed: false }
-	]);
-	const [ editing, setEditing ] = useState<number>(0);
+	const [ todos, setTodos ] = useState<ITodo[]>([]);
+	const [ editing, setEditing ] = useState<string>("");
 	const [ nowShowing, setNowShowing ] = useState<string>('all');
+	const [ login, setLogin ] = useState<boolean>(false);
+	const [ email, setEmail ] = useState<string>('');
+	const [ password, setPassword ] = useState<string>('');
 
-	const handleNewTodoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setTask(event.target.value);
+	const getTasks = async () => {
+		const res = await axios.get('http://localhost:8080/api/tasks', {withCredentials: true});
+		const tasks = res.data.tasks
+		setTodos(tasks)
 	};
+
+	useEffect(() => {
+		getTasks();
+	}, [])
 
 	const handleNewTodoSubmit = (event: React.FormEvent<HTMLFormElement>) => {
 		// Change this so an attempt is made to post the task to the db.
@@ -139,9 +178,10 @@ const App: React.FC = () => {
 	};
 
 	const toggle = (todoToToggle: ITodo) => {
-		const newTodos = [ ...todos ];
-		newTodos[todoToToggle.id - 1].completed = !todos[todoToToggle.id - 1].completed;
-		setTodos(newTodos);
+		// const newTodos = [ ...todos ];
+		// newTodos[todoToToggle.id].completed = !todos[todoToToggle.id - 1].completed;
+		// const 
+		// setTodos(newTodos);
 	};
 
 	const destroy = (todo: ITodo) => {
@@ -158,20 +198,26 @@ const App: React.FC = () => {
 
 	const save = (todoToSave: ITodo, text: string) => {
 		const newTodos = [ ...todos ];
-		newTodos[todoToSave.id - 1].title = text;
-		setTodos(newTodos);
-		setEditing(0);
+		// newTodos[todoToSave.id - 1].title = text;
+		// setTodos(newTodos);
+		// setEditing(0);
 	};
 
 	const cancel = () => {
-		setEditing(0);
+		setEditing("");
 	};
 
 	const clearCompleted = () => {
-		const remainingTodos = todos.filter((todo) => {
+		const remainingTodos = todos.filter((todo: ITodo) => {
 			return !todo.completed;
 		});
 		setTodos(remainingTodos);
+	};
+
+	const loginUser = async () => {
+		await axios.post('http://localhost:8080/api/users/login', { email: email, password: password }, {withCredentials: true});
+		setLogin(false)
+		getTasks();
 	};
 
 	const shownTodos = todos.filter((todo) => {
@@ -187,7 +233,7 @@ const App: React.FC = () => {
 
 	const todoItems = shownTodos.map((todo) => (
 		<TodoItem
-			key={String(todo.id)}
+			key={todo.id}
 			todo={todo}
 			onToggle={() => toggle(todo)}
 			onDestroy={() => destroy(todo)}
@@ -234,20 +280,44 @@ const App: React.FC = () => {
 	}
 
 	return (
-		<TodoApp>
-			<h1>todos</h1>
-			<form onSubmit={(e) => handleNewTodoSubmit(e)}>
-				<TodoInput
-					value={task}
-					placeholder="What needs to be done?"
-					onChange={(e) => handleNewTodoChange(e)}
-					autoFocus={true}
-				/>
-			</form>
-			{main}
-			{footer}
-			<LoginModal active={true} />
-		</TodoApp>
+		<React.Fragment>
+			<Nav>
+				<Button onClick={() => setLogin(true)}>Login</Button>
+			</Nav>
+			<TodoApp>
+				<h1>todos</h1>
+				<form onSubmit={(e) => handleNewTodoSubmit(e)}>
+					<TodoInput
+						value={task}
+						placeholder="What needs to be done?"
+						onChange={(e) => setTask(e.target.value)}
+						autoFocus={true}
+					/>
+				</form>
+				{main}
+				{footer}
+				<LoginModal active={login} backgroundClicked={() => setLogin(false)}>
+					<h2>login</h2>
+					<label>Email</label>
+					<input placeholder={'Enter email here'} value={email} onChange={(e) => setEmail(e.target.value)} />
+					<label>Password</label>
+					<input
+						type="password"
+						placeholder={'Enter password here'}
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+					/>
+					<Button onClick={() => loginUser()}>Confirm</Button>
+				</LoginModal>
+			</TodoApp>
+			<Footer>
+				<p>Double-click to edit a todo</p>
+				<p>Created by Matthew Kennedy</p>
+				<p>
+					Inspired by <a href="http://todomvc.com">TodoMVC</a>
+				</p>
+			</Footer>
+		</React.Fragment>
 	);
 };
 

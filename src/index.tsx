@@ -44,7 +44,6 @@ const GlobalStyle = createGlobalStyle`
         outline: 0;
     }
 
-
     hr {
         margin: 20px 0;
         border: 0;

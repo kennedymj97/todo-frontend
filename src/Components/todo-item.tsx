@@ -107,7 +107,7 @@ const EditTodo = styled.input`
 `;
 
 const TodoItem: React.FunctionComponent<ITodoItemProps> = (props) => {
-	const [ text, setText ] = useState(props.todo.title);
+	const [ text, setText ] = useState(props.todo.content);
 
 	const handleSubmit = () => {
 		const val = text.trim();
@@ -121,12 +121,12 @@ const TodoItem: React.FunctionComponent<ITodoItemProps> = (props) => {
 
 	const handleEdit = () => {
 		props.onEdit();
-		setText(props.todo.title);
+		setText(props.todo.content);
 	};
 
 	const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
 		if (event.key === 'Escape') {
-			setText(props.todo.title);
+			setText(props.todo.content);
 			props.onCancel(event);
 		} else if (event.key === 'Enter') {
 			handleSubmit();
@@ -146,7 +146,7 @@ const TodoItem: React.FunctionComponent<ITodoItemProps> = (props) => {
 						checked={props.todo.completed}
 						onChange={props.onToggle}
 					/>
-					<label onDoubleClick={(e) => handleEdit()}>{props.todo.title}</label>
+					<label onDoubleClick={(e) => handleEdit()}>{props.todo.content}</label>
 					<DestroyTodo onClick={props.onDestroy} />
 				</TodoContainer>
 			</TodoListItem>

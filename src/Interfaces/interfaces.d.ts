@@ -1,6 +1,6 @@
 interface ITodo {
-	id: number;
-	title: string;
+	id: string;
+	content: string;
 	completed: boolean;
 }
 
@@ -34,5 +34,7 @@ interface ITodoFooterItemProps {
 }
 
 interface ILoginModal {
-	active: boolean
+	active: boolean;
+	backgroundClicked: () => void;
+	children?: any;
 }
