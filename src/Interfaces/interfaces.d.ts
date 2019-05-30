@@ -38,3 +38,7 @@ interface ILoginModal {
 	backgroundClicked: () => void;
 	children?: any;
 }
+
+interface INavProps {
+	error: boolean;
+}

@@ -113,7 +113,7 @@ const TodoItem: React.FunctionComponent<ITodoItemProps> = (props) => {
 		const val = text.trim();
 		if (val) {
 			props.onSave(val);
-			setText(val);
+			// setText(val);
 		} else {
 			props.onDestroy();
 		}

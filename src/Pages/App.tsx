@@ -6,6 +6,7 @@ import TodoItem from 'Components/todo-item';
 import TodoFooter from 'Components/todo-footer';
 import LoginModal from 'Components/modal';
 import Button from 'Components/UI/button';
+import NotAuthed from 'Components/not-auth'
 
 const TodoApp = styled.div`
 	background: #fff;
@@ -117,6 +118,7 @@ const Nav = styled.nav`
 	justify-content: center;
 	padding: 10px;
 	box-sizing: border-box;
+	margin-top: ${(props: INavProps) => (props.error ? '6vh' : '0')};
 `;
 
 const Footer = styled.footer`
@@ -141,83 +143,217 @@ const Footer = styled.footer`
 	}
 `;
 
+const ErrorHeader = styled.header`
+	width: 100vw;
+	height: 5vw;
+	background: red;
+	color: white;
+	font-size: 16px;
+	font-weigth: 400;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: fixed;
+	top: 0;
+	left: 0;
+`;
+
+const LoginForm = styled.form`
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+`;
+
+const BASE_URL: string = 'http://localhost:8080';
+
 const App: React.FC = () => {
 	const [ task, setTask ] = useState<string>('');
 	const [ todos, setTodos ] = useState<ITodo[]>([]);
-	const [ editing, setEditing ] = useState<string>("");
+	const [ editing, setEditing ] = useState<string>('');
 	const [ nowShowing, setNowShowing ] = useState<string>('all');
 	const [ login, setLogin ] = useState<boolean>(false);
 	const [ email, setEmail ] = useState<string>('');
 	const [ password, setPassword ] = useState<string>('');
+	const [ error, setError ] = useState<boolean>(false);
+	const [ authorized, setAuthorized ] = useState<boolean>(false);
 
 	const getTasks = async () => {
-		const res = await axios.get('http://localhost:8080/api/tasks', {withCredentials: true});
-		const tasks = res.data.tasks
-		setTodos(tasks)
+		try {
+			const res = await axios.get(BASE_URL + '/api/tasks', { withCredentials: true });
+			setError(false);
+			if (res.status === 200) {
+				setAuthorized(true);
+				const tasks = res.data.tasks;
+				if (tasks !== null) {
+					tasks.reverse();
+					setTodos(tasks);
+				} else {
+					setTodos([]);
+				}
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
 	};
 
 	useEffect(() => {
 		getTasks();
-	}, [])
+	}, []);
 
-	const handleNewTodoSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+	const handleNewTodoSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		// Change this so an attempt is made to post the task to the db.
-		console.log(`Creating task: ${task}`);
-		setTask('');
 		event.preventDefault();
-	};
-
-	const toggleAll = (event: React.FormEvent<HTMLInputElement>) => {
-		let newTodos;
-		if (event.currentTarget.checked) {
-			newTodos = todos.map((ele: any) => ({ ...ele, completed: true }));
-		} else {
-			newTodos = todos.map((ele: any) => ({ ...ele, completed: false }));
+		try {
+			const res = await axios.post(BASE_URL + '/api/tasks/create', { content: task }, { withCredentials: true });
+			if (res.status === 200) {
+				setAuthorized(true);
+				setError(false);
+				setTask('');
+				getTasks();
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
 		}
-		setTodos(newTodos);
 	};
 
-	const toggle = (todoToToggle: ITodo) => {
-		// const newTodos = [ ...todos ];
-		// newTodos[todoToToggle.id].completed = !todos[todoToToggle.id - 1].completed;
-		// const 
-		// setTodos(newTodos);
+	const toggleAll = async (event: React.FormEvent<HTMLInputElement>) => {
+		try {
+			let res;
+			if (event.currentTarget.checked) {
+				res = await axios.patch(BASE_URL + '/api/tasks/toggleAll', { val: true }, { withCredentials: true });
+			} else {
+				res = await axios.patch(BASE_URL + '/api/tasks/toggleAll', { val: false }, { withCredentials: true });
+			}
+			if (res.status === 200) {
+				setAuthorized(true);
+				setError(false);
+				getTasks();
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
 	};
 
-	const destroy = (todo: ITodo) => {
-		setTodos(
-			todos.filter((candidate) => {
-				return candidate !== todo;
-			})
-		);
+	const toggle = async (todoToToggle: ITodo) => {
+		try {
+			const res = await axios.patch(
+				BASE_URL + '/api/tasks/toggle',
+				{ id: todoToToggle.id, val: !todoToToggle.completed },
+				{ withCredentials: true }
+			);
+			if (res.status === 200) {
+				setAuthorized(true);
+				setError(false);
+				getTasks();
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
+	};
+
+	const destroy = async (todo: ITodo) => {
+		try {
+			const res = await axios.delete(BASE_URL + `/api/tasks/delete/${todo.id}`, { withCredentials: true });
+			if (res.status === 200) {
+				setAuthorized(true);
+				setError(false);
+				getTasks();
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
 	};
 
 	const edit = (todo: ITodo) => {
 		setEditing(todo.id);
 	};
 
-	const save = (todoToSave: ITodo, text: string) => {
-		const newTodos = [ ...todos ];
-		// newTodos[todoToSave.id - 1].title = text;
-		// setTodos(newTodos);
-		// setEditing(0);
+	const save = async (todoToSave: ITodo, text: string) => {
+		try {
+			const res = await axios.patch(
+				BASE_URL + '/api/tasks/edit',
+				{ id: todoToSave.id, content: text },
+				{ withCredentials: true }
+			);
+			if (res.status === 200) {
+				setAuthorized(true);
+				setError(false);
+				getTasks();
+				setEditing('');
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
 	};
 
 	const cancel = () => {
-		setEditing("");
+		setEditing('');
 	};
 
-	const clearCompleted = () => {
-		const remainingTodos = todos.filter((todo: ITodo) => {
-			return !todo.completed;
-		});
-		setTodos(remainingTodos);
+	const clearCompleted = async () => {
+		try {
+			const res = await axios.delete(BASE_URL + '/api/tasks/clearCompleted', { withCredentials: true });
+			if (res.status === 200) {
+				setAuthorized(true);
+				setError(false);
+				getTasks();
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
 	};
 
-	const loginUser = async () => {
-		await axios.post('http://localhost:8080/api/users/login', { email: email, password: password }, {withCredentials: true});
-		setLogin(false)
-		getTasks();
+	const loginUser = async (event: React.FormEvent) => {
+		event.preventDefault();
+		try {
+			const res = await axios.post(
+				BASE_URL + '/api/users/login',
+				{ email: email, password: password },
+				{ withCredentials: true }
+			);
+			if (res.status === 200) {
+				setAuthorized(true);
+				setError(false);
+				setLogin(false);
+				getTasks();
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
 	};
 
 	const shownTodos = todos.filter((todo) => {
@@ -281,7 +417,8 @@ const App: React.FC = () => {
 
 	return (
 		<React.Fragment>
-			<Nav>
+			{error ? <ErrorHeader>Error: failed to connect to the server.</ErrorHeader> : null}
+			<Nav error={error}>
 				<Button onClick={() => setLogin(true)}>Login</Button>
 			</Nav>
 			<TodoApp>
@@ -298,18 +435,25 @@ const App: React.FC = () => {
 				{footer}
 				<LoginModal active={login} backgroundClicked={() => setLogin(false)}>
 					<h2>login</h2>
-					<label>Email</label>
-					<input placeholder={'Enter email here'} value={email} onChange={(e) => setEmail(e.target.value)} />
-					<label>Password</label>
-					<input
-						type="password"
-						placeholder={'Enter password here'}
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-					/>
-					<Button onClick={() => loginUser()}>Confirm</Button>
+					<LoginForm onSubmit={(e) => loginUser(e)}>
+						<label>Email</label>
+						<input
+							placeholder={'Enter email here'}
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
+						/>
+						<label>Password</label>
+						<input
+							type="password"
+							placeholder={'Enter password here'}
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+						/>
+						<Button>Confirm</Button>
+					</LoginForm>
 				</LoginModal>
 			</TodoApp>
+			{authorized ? null : <NotAuthed>Login to create a new task.</NotAuthed>}
 			<Footer>
 				<p>Double-click to edit a todo</p>
 				<p>Created by Matthew Kennedy</p>
