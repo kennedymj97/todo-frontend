@@ -6,7 +6,7 @@ import TodoItem from 'Components/todo-item';
 import TodoFooter from 'Components/todo-footer';
 import LoginModal from 'Components/modal';
 import Button from 'Components/UI/button';
-import NotAuthed from 'Components/not-auth'
+import NotAuthed from 'Components/not-auth';
 
 const TodoApp = styled.div`
 	background: #fff;
@@ -166,18 +166,29 @@ const LoginForm = styled.form`
 	justify-content: center;
 `;
 
-const BASE_URL: string = 'http://localhost:8080';
+const BASE_URL: string = 'http://ec2-34-250-151-5.eu-west-1.compute.amazonaws.com:8080';
 
 const App: React.FC = () => {
+	// variable for the task input field
 	const [ task, setTask ] = useState<string>('');
+	// state of todos
 	const [ todos, setTodos ] = useState<ITodo[]>([]);
+	// id of a todo being edited
 	const [ editing, setEditing ] = useState<string>('');
+	// which todos are showing (all, active, completed)
 	const [ nowShowing, setNowShowing ] = useState<string>('all');
+	// is the login modal active
 	const [ login, setLogin ] = useState<boolean>(false);
+	// variables for login/signup
 	const [ email, setEmail ] = useState<string>('');
 	const [ password, setPassword ] = useState<string>('');
+	const [ confirmPassword, setConfirmPassword ] = useState<string>('')
+	// has an error occured contacting server
 	const [ error, setError ] = useState<boolean>(false);
+	// is the user logged in
 	const [ authorized, setAuthorized ] = useState<boolean>(false);
+	// used to toggle login/signup
+	const [ isLogin, setIsLogin ] = useState<boolean>(true);
 
 	const getTasks = async () => {
 		try {
@@ -333,8 +344,7 @@ const App: React.FC = () => {
 		}
 	};
 
-	const loginUser = async (event: React.FormEvent) => {
-		event.preventDefault();
+	const loginUser = async () => {
 		try {
 			const res = await axios.post(
 				BASE_URL + '/api/users/login',
@@ -348,6 +358,33 @@ const App: React.FC = () => {
 				getTasks();
 			} else if (res.status === 401) {
 				setAuthorized(false);
+			}
+		} catch (error) {
+			if (error == 'Error: Network Error') {
+				setError(true);
+			}
+		}
+	}
+
+	const loginUserSubmit = async (event: React.FormEvent) => {
+		event.preventDefault();
+		loginUser()
+	};
+
+	const signupUser = async (event: React.FormEvent) => {
+		event.preventDefault();
+		try {
+			if (password !== confirmPassword) {
+				alert('Passwords do not match!')
+				return
+			}
+			const res = await axios.post(
+				BASE_URL + '/api/users/create',
+				{ email: email, password: password },
+				{ withCredentials: true }
+			);
+			if (res.status === 200) {
+				loginUser()
 			}
 		} catch (error) {
 			if (error == 'Error: Network Error') {
@@ -434,23 +471,52 @@ const App: React.FC = () => {
 				{main}
 				{footer}
 				<LoginModal active={login} backgroundClicked={() => setLogin(false)}>
-					<h2>login</h2>
-					<LoginForm onSubmit={(e) => loginUser(e)}>
-						<label>Email</label>
-						<input
-							placeholder={'Enter email here'}
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-						/>
-						<label>Password</label>
-						<input
-							type="password"
-							placeholder={'Enter password here'}
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-						/>
-						<Button>Confirm</Button>
-					</LoginForm>
+					{isLogin ? (
+						<LoginForm onSubmit={(e) => loginUserSubmit(e)}>
+							<h2>login</h2>
+							<label>Email</label>
+							<input
+								placeholder={'Enter email here'}
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+							/>
+							<label>Password</label>
+							<input
+								type="password"
+								placeholder={'Enter password here'}
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+							/>
+							<Button>Confirm</Button>
+							<span onClick={() => setIsLogin(false)}>Don't have an account? Signup.</span>
+						</LoginForm>
+					) : (
+						<LoginForm onSubmit={(e) => signupUser(e)}>
+							<h2>signup</h2>
+							<label>Email</label>
+							<input
+								placeholder={'Enter email here'}
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+							/>
+							<label>Password</label>
+							<input
+								type="password"
+								placeholder={'Enter password here'}
+								value={password}
+								onChange={(e) => setPassword(e.target.value)}
+							/>
+							<label>Confirm Password</label>
+							<input
+								type="password"
+								placeholder={'Enter password here'}
+								value={confirmPassword}
+								onChange={(e) => setConfirmPassword(e.target.value)}
+							/>
+							<Button>Confirm</Button>
+							<span onClick={() => setIsLogin(true)}>Already have an account? Login.</span>
+						</LoginForm>
+					)}
 				</LoginModal>
 			</TodoApp>
 			{authorized ? null : <NotAuthed>Login to create a new task.</NotAuthed>}
