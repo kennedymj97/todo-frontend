@@ -7,6 +7,7 @@ import TodoFooter from 'Components/todo-footer';
 import LoginModal from 'Components/modal';
 import Button from 'Components/UI/button';
 import NotAuthed from 'Components/not-auth';
+import Spinner from 'Components/UI/loader/loader';
 
 const TodoApp = styled.div`
 	background: #fff;
@@ -166,6 +167,14 @@ const LoginForm = styled.form`
 	justify-content: center;
 `;
 
+/*
+
+TODOS:
+- MOVE EVERYTHING OUT OF STYLED COMPONENTS INTO CSS MODULES
+- UPDATE USER EXPERIENCE SO THE TASKS ARE ALL COMPLETED LOCALLY AND THE BACKEND IS UPDATED LATER, IF FAILED GIVE A MESSAGE AND GET THE OLD STATE BACK
+
+*/
+
 const BASE_URL: string = 'http://ec2-34-250-151-5.eu-west-1.compute.amazonaws.com:8080';
 // const BASE_URL: string = 'http://localhost:8080';
 
@@ -183,16 +192,18 @@ const App: React.FC = () => {
 	// variables for login/signup
 	const [ email, setEmail ] = useState<string>('');
 	const [ password, setPassword ] = useState<string>('');
-	const [ confirmPassword, setConfirmPassword ] = useState<string>('')
+	const [ confirmPassword, setConfirmPassword ] = useState<string>('');
 	// has an error occured contacting server
 	const [ error, setError ] = useState<boolean>(false);
 	// is the user logged in
 	const [ authorized, setAuthorized ] = useState<boolean>(false);
 	// used to toggle login/signup
 	const [ isLogin, setIsLogin ] = useState<boolean>(true);
+	const [ loading, setLoading ] = useState<boolean>(false);
 
 	const getTasks = async () => {
 		try {
+			setLoading(true);
 			const res = await axios.get(BASE_URL + '/api/tasks', { withCredentials: true });
 			setError(false);
 			if (res.status === 200) {
@@ -207,10 +218,12 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
@@ -222,6 +235,7 @@ const App: React.FC = () => {
 		// Change this so an attempt is made to post the task to the db.
 		event.preventDefault();
 		try {
+			setLoading(true);
 			const res = await axios.post(BASE_URL + '/api/tasks/create', { content: task }, { withCredentials: true });
 			if (res.status === 200) {
 				setAuthorized(true);
@@ -231,16 +245,19 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
 	const toggleAll = async (event: React.FormEvent<HTMLInputElement>) => {
 		try {
 			let res;
+			setLoading(true);
 			if (event.currentTarget.checked) {
 				res = await axios.post(BASE_URL + '/api/tasks/toggleAll', { val: true }, { withCredentials: true });
 			} else {
@@ -253,15 +270,18 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
 	const toggle = async (todoToToggle: ITodo) => {
 		try {
+			setLoading(true);
 			const res = await axios.post(
 				BASE_URL + '/api/tasks/toggle',
 				{ id: todoToToggle.id, val: !todoToToggle.completed },
@@ -274,15 +294,18 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
 	const destroy = async (todo: ITodo) => {
 		try {
+			setLoading(true);
 			const res = await axios.delete(BASE_URL + `/api/tasks/delete/${todo.id}`, { withCredentials: true });
 			if (res.status === 200) {
 				setAuthorized(true);
@@ -291,10 +314,12 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
@@ -304,6 +329,7 @@ const App: React.FC = () => {
 
 	const save = async (todoToSave: ITodo, text: string) => {
 		try {
+			setLoading(true);
 			const res = await axios.post(
 				BASE_URL + '/api/tasks/edit',
 				{ id: todoToSave.id, content: text },
@@ -317,10 +343,12 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
@@ -330,6 +358,7 @@ const App: React.FC = () => {
 
 	const clearCompleted = async () => {
 		try {
+			setLoading(true);
 			const res = await axios.delete(BASE_URL + '/api/tasks/clearCompleted', { withCredentials: true });
 			if (res.status === 200) {
 				setAuthorized(true);
@@ -338,15 +367,18 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
 	const loginUser = async () => {
 		try {
+			setLoading(true);
 			const res = await axios.post(
 				BASE_URL + '/api/users/login',
 				{ email: email, password: password },
@@ -360,37 +392,42 @@ const App: React.FC = () => {
 			} else if (res.status === 401) {
 				setAuthorized(false);
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
-	}
+	};
 
 	const loginUserSubmit = async (event: React.FormEvent) => {
 		event.preventDefault();
-		loginUser()
+		loginUser();
 	};
 
 	const signupUser = async (event: React.FormEvent) => {
 		event.preventDefault();
 		try {
 			if (password !== confirmPassword) {
-				alert('Passwords do not match!')
-				return
+				alert('Passwords do not match!');
+				return;
 			}
+			setLoading(true);
 			const res = await axios.post(
 				BASE_URL + '/api/users/create',
 				{ email: email, password: password },
 				{ withCredentials: true }
 			);
 			if (res.status === 200) {
-				loginUser()
+				loginUser();
 			}
+			setLoading(false);
 		} catch (error) {
 			if (error == 'Error: Network Error') {
 				setError(true);
 			}
+			setLoading(false);
 		}
 	};
 
@@ -456,9 +493,11 @@ const App: React.FC = () => {
 	return (
 		<React.Fragment>
 			{error ? <ErrorHeader>Error: failed to connect to the server.</ErrorHeader> : null}
-			<Nav error={error}>
-				<Button onClick={() => setLogin(true)}>Login</Button>
-			</Nav>
+			{authorized ? null : (
+				<Nav error={error}>
+					<Button onClick={() => setLogin(true)}>Login</Button>
+				</Nav>
+			)}
 			<TodoApp>
 				<h1>todos</h1>
 				<form onSubmit={(e) => handleNewTodoSubmit(e)}>
@@ -469,7 +508,7 @@ const App: React.FC = () => {
 						autoFocus={true}
 					/>
 				</form>
-				{main}
+				{loading ? <Spinner /> : main}
 				{footer}
 				<LoginModal active={login} backgroundClicked={() => setLogin(false)}>
 					{isLogin ? (
