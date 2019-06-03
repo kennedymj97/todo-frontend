@@ -145,7 +145,7 @@ const Footer = styled.footer`
 
 const ErrorHeader = styled.header`
 	width: 100vw;
-	height: 5vw;
+	height: 5vh;
 	background: red;
 	color: white;
 	font-size: 16px;
@@ -167,6 +167,7 @@ const LoginForm = styled.form`
 `;
 
 const BASE_URL: string = 'http://ec2-34-250-151-5.eu-west-1.compute.amazonaws.com:8080';
+// const BASE_URL: string = 'http://localhost:8080';
 
 const App: React.FC = () => {
 	// variable for the task input field
@@ -241,9 +242,9 @@ const App: React.FC = () => {
 		try {
 			let res;
 			if (event.currentTarget.checked) {
-				res = await axios.patch(BASE_URL + '/api/tasks/toggleAll', { val: true }, { withCredentials: true });
+				res = await axios.post(BASE_URL + '/api/tasks/toggleAll', { val: true }, { withCredentials: true });
 			} else {
-				res = await axios.patch(BASE_URL + '/api/tasks/toggleAll', { val: false }, { withCredentials: true });
+				res = await axios.post(BASE_URL + '/api/tasks/toggleAll', { val: false }, { withCredentials: true });
 			}
 			if (res.status === 200) {
 				setAuthorized(true);
@@ -261,7 +262,7 @@ const App: React.FC = () => {
 
 	const toggle = async (todoToToggle: ITodo) => {
 		try {
-			const res = await axios.patch(
+			const res = await axios.post(
 				BASE_URL + '/api/tasks/toggle',
 				{ id: todoToToggle.id, val: !todoToToggle.completed },
 				{ withCredentials: true }
@@ -303,7 +304,7 @@ const App: React.FC = () => {
 
 	const save = async (todoToSave: ITodo, text: string) => {
 		try {
-			const res = await axios.patch(
+			const res = await axios.post(
 				BASE_URL + '/api/tasks/edit',
 				{ id: todoToSave.id, content: text },
 				{ withCredentials: true }
