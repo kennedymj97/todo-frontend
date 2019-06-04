@@ -42,3 +42,14 @@ interface ILoginModal {
 interface INavProps {
 	error: boolean;
 }
+
+interface ITodoButton {
+	clicked?: () => void;
+	children?: string;
+}
+
+interface ITodoFilterProps {
+	clicked?: () => void;
+	selected: boolean;
+	children?: string;
+}

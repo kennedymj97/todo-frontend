@@ -1,0 +1,14 @@
+.Container {
+    width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.Message {
+    font-size: 20px;
+	color: rgba(175, 47, 47, 0.4);
+	font-weight: 400;
+	padding: 8px;
+	box-sizing: border-box;
+}
