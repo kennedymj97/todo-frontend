@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios, { AxiosResponse } from 'axios';
 
 import TodoItem from 'Components/Todo/Item/Item';
@@ -13,6 +13,7 @@ import uuidv1 from 'uuid/v1';
 /*
 
 TODOS:
+- make it so all offline activity is saved instead of removed?
 
 */
 
@@ -44,7 +45,6 @@ const App: React.FC = () => {
 	// used to toggle logging in loading state
 	const [ loggingIn, setLoggingIn ] = useState<boolean>(false);
 
-
 	// handleError deals with errors produced when fetching data
 	const handleError = (error: string) => {
 		if (error === 'Error: Network Error') {
@@ -63,37 +63,34 @@ const App: React.FC = () => {
 		}
 	};
 
-	useEffect(
-		() => {
-			// getTasks retrieves all of the users tasks from the database
-			const getTasks = async () => {
-				try {
-					setLoading(true);
-					const res = await axios.get(BASE_URL + '/api/tasks', { withCredentials: true });
-					setError(false);
-					if (res.status === 200) {
-						setAuthorized(true);
-						const tasks = res.data.tasks;
-						if (tasks !== null) {
-							tasks.reverse();
-							setTodos(tasks);
-						} else {
-							setTodos([]);
-						}
-					} else if (res.status === 401) {
-						setAuthorized(false);
-					}
-					setLoading(false);
-				} catch (error) {
-					handleError(String(error));
+	// getTasks retrieves all of the users tasks from the database
+	const getTasks = useCallback(async () => {
+		try {
+			setLoading(true);
+			const res = await axios.get(BASE_URL + '/api/tasks', { withCredentials: true });
+			setError(false);
+			if (res.status === 200) {
+				setAuthorized(true);
+				const tasks = res.data.tasks;
+				if (tasks !== null) {
+					tasks.reverse();
+					setTodos(tasks);
+				} else {
+					setTodos([]);
 				}
-			};
+			} else if (res.status === 401) {
+				setAuthorized(false);
+			}
+			setLoading(false);
+		} catch (error) {
+			handleError(String(error));
+		}
+	}, []);
 
-			getTasks();
-		},
-		[ authorized, error ]
-	);
-	
+	useEffect(() => {
+		getTasks();
+	}, [getTasks]);
+
 	// handleNewTodoSubmit adds a todo and posts it to the backend
 	const handleNewTodoSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 		// Change this so an attempt is made to post the task to the db.
@@ -225,6 +222,7 @@ const App: React.FC = () => {
 				setAuthorized(true);
 				setError(false);
 				setLogin(false);
+				getTasks();
 			}
 			setLoggingIn(false);
 		} catch (error) {
@@ -261,6 +259,16 @@ const App: React.FC = () => {
 		} catch (error) {
 			handleError(String(error));
 			setLoggingIn(false);
+		}
+	};
+
+	const logoutUser = async () => {
+		setAuthorized(false);
+		setTodos([]);
+		try {
+			await axios.delete(BASE_URL + '/api/users/logout', { withCredentials: true });
+		} catch (error) {
+			handleError(error.message);
 		}
 	};
 
@@ -331,11 +339,13 @@ const App: React.FC = () => {
 					Error: failed to connect to the server. Recent changes made may be lost.
 				</header>
 			) : null}
-			{authorized ? null : (
-				<nav className={classes.Nav} style={{ marginTop: error ? '6vh' : '0' }}>
+			<nav className={classes.Nav} style={{ marginTop: error ? '6vh' : '0' }}>
+				{authorized ? (
+					<Button clicked={() => logoutUser()}>Logout</Button>
+				) : (
 					<Button clicked={() => setLogin(true)}>Login</Button>
-				</nav>
-			)}
+				)}
+			</nav>
 			<div className={classes.TodoApp}>
 				<h1>todos</h1>
 				<form onSubmit={(e) => handleNewTodoSubmit(e)}>
