@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosResponse, AxiosError } from 'axios';
 
 import TodoItem from 'Components/Todo/Item/Item';
 import TodoFooter from 'Components/Todo/Footer/Footer';
@@ -14,7 +14,7 @@ import uuidv1 from 'uuid/v1';
 
 TODOS:
 - make it so all offline activity is saved instead of removed?
-
+- improve warning messages on inputs
 */
 
 const BASE_URL: string = 'http://ec2-34-250-151-5.eu-west-1.compute.amazonaws.com:8080';
@@ -46,9 +46,13 @@ const App: React.FC = () => {
 	const [ loggingIn, setLoggingIn ] = useState<boolean>(false);
 
 	// handleError deals with errors produced when fetching data
-	const handleError = (error: string) => {
-		if (error === 'Error: Network Error') {
-			setError(true);
+	const handleError = (error: AxiosError) => {
+		if (error.response && error.response.status === 401) {
+			setAuthorized(false)
+		} else if (error.response && error.response.status === 400) {
+			alert('Username or password is incorrect.')
+		} else {
+			setError(true)
 		}
 		setLoading(false);
 	};
@@ -58,8 +62,6 @@ const App: React.FC = () => {
 		if (res.status === 200) {
 			setAuthorized(true);
 			setError(false);
-		} else if (res.status === 401) {
-			setAuthorized(false);
 		}
 	};
 
@@ -67,8 +69,8 @@ const App: React.FC = () => {
 	const getTasks = useCallback(async () => {
 		try {
 			setLoading(true);
-			const res = await axios.get(BASE_URL + '/api/tasks', { withCredentials: true });
 			setError(false);
+			const res = await axios.get(BASE_URL + '/api/tasks', { withCredentials: true });
 			if (res.status === 200) {
 				setAuthorized(true);
 				const tasks = res.data.tasks;
@@ -78,12 +80,10 @@ const App: React.FC = () => {
 				} else {
 					setTodos([]);
 				}
-			} else if (res.status === 401) {
-				setAuthorized(false);
 			}
 			setLoading(false);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 		}
 	}, []);
 
@@ -108,7 +108,7 @@ const App: React.FC = () => {
 			);
 			handleResponse(res);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 		}
 	};
 
@@ -134,7 +134,7 @@ const App: React.FC = () => {
 			}
 			handleResponse(res);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 		}
 	};
 
@@ -155,7 +155,7 @@ const App: React.FC = () => {
 			);
 			handleResponse(res);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 		}
 	};
 
@@ -169,7 +169,7 @@ const App: React.FC = () => {
 			const res = await axios.delete(BASE_URL + `/api/tasks/delete/${todo.id}`, { withCredentials: true });
 			handleResponse(res);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 		}
 	};
 
@@ -191,7 +191,7 @@ const App: React.FC = () => {
 			);
 			handleResponse(res);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 		}
 	};
 
@@ -205,7 +205,7 @@ const App: React.FC = () => {
 			const res = await axios.delete(BASE_URL + '/api/tasks/clearCompleted', { withCredentials: true });
 			handleResponse(res);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 		}
 	};
 
@@ -226,7 +226,7 @@ const App: React.FC = () => {
 			}
 			setLoggingIn(false);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 			setAuthorized(false);
 			setLoggingIn(false);
 		}
@@ -257,7 +257,7 @@ const App: React.FC = () => {
 			}
 			setLoggingIn(false);
 		} catch (error) {
-			handleError(String(error));
+			handleError(error);
 			setLoggingIn(false);
 		}
 	};
@@ -268,7 +268,7 @@ const App: React.FC = () => {
 		try {
 			await axios.delete(BASE_URL + '/api/users/logout', { withCredentials: true });
 		} catch (error) {
-			handleError(error.message);
+			handleError(error);
 		}
 	};
 
