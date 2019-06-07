@@ -15,9 +15,11 @@ import uuidv1 from 'uuid/v1';
 TODOS:
 - make it so all offline activity is saved instead of removed?
 - improve warning messages on inputs
+- autofocus to email input on modal open
+
 */
 
-const BASE_URL: string = 'http://ec2-34-250-151-5.eu-west-1.compute.amazonaws.com:8080';
+const BASE_URL: string = 'http://ec2-34-244-114-95.eu-west-1.compute.amazonaws.com:8080';
 
 const App: React.FC = () => {
 	// variable for the task input field
@@ -377,7 +379,7 @@ const App: React.FC = () => {
 								onChange={(e) => setPassword(e.target.value)}
 							/>
 							{loggingIn ? <Spinner /> : <Button>Login</Button>}
-							<span onClick={() => setIsLogin(false)}>Don't have an account? Signup.</span>
+							<span style={{marginTop: '1rem'}} onClick={() => setIsLogin(false)}>Don't have an account? Signup.</span>
 						</form>
 					) : (
 						<form className={classes.LoginForm} onSubmit={(e) => signupUser(e)}>
