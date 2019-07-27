@@ -19,7 +19,7 @@ TODOS:
 
 */
 
-const BASE_URL: string = 'http://ec2-34-244-114-95.eu-west-1.compute.amazonaws.com:8080';
+const BASE_URL: string = 'https://api.mattkennedy.io/todo';
 
 const App: React.FC = () => {
 	// variable for the task input field
